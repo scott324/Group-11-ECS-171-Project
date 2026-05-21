@@ -1,0 +1,117 @@
+---
+title: "Visualization of Data"
+author: "Arlette Hall"
+date: "2026-05-21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Libraries & Data
+
+```{r, message = FALSE}
+#load library
+library(tidyverse)
+library(ggplot2)
+```
+
+```{r}
+#load data
+data <- read.csv("SAFER_RA_cleaned.csv")
+```
+
+## Risk Assessment: Number of Different Analytes
+
+```{r}
+#total primary analytes
+data %>%
+  filter(RISK_ASSESSMENT_RESULT != is.na(RISK_ASSESSMENT_RESULT)) %>%
+  ggplot(mapping=aes(x = TOTAL_PRIMARY_ANALYTES, y = RISK_ASSESSMENT_RESULT))+
+  geom_boxplot(na.rm = T)+
+  labs(title = "Risk Assessment Result vs Total Primary Analytes")
+```
+
+```{r}
+#total secondary analytes
+data %>%
+  filter(RISK_ASSESSMENT_RESULT != is.na(RISK_ASSESSMENT_RESULT)) %>%
+  ggplot(mapping=aes(x = TOTAL_SECONDARY_ANALYTES, y = RISK_ASSESSMENT_RESULT))+
+  geom_boxplot(na.rm = T)+
+  labs(title = "Risk Assessment Result vs Total Secondary Analytes")
+```
+
+```{r}
+#total e coli analytes
+data %>%
+  filter(RISK_ASSESSMENT_RESULT != is.na(RISK_ASSESSMENT_RESULT)) %>%
+  ggplot(mapping=aes(x = TOTAL_E_COLI_ANALYTES, y = RISK_ASSESSMENT_RESULT))+
+  geom_boxplot(na.rm = T)+
+  labs(title = "Risk Assessment Result vs Total E. Coli Analytes")
+```
+
+## At-Risk Assessment: Types of Different Analytes
+
+```{r}
+data %>%
+  filter(PRIMARY_ANALYTE_1 != is.na(PRIMARY_ANALYTE_1) 
+         & RISK_ASSESSMENT_RESULT == "At-Risk") %>%
+  ggplot(mapping=aes(x = PRIMARY_ANALYTE_1))+
+  geom_bar(na.rm = T)+
+  coord_flip()+
+  labs(title = "At-Risk Assessment: Primary Analyte 1")
+```
+
+```{r}
+data %>%
+  filter(PRIMARY_ANALYTE_2 != is.na(PRIMARY_ANALYTE_2) 
+         & RISK_ASSESSMENT_RESULT == "At-Risk") %>%
+  ggplot(mapping=aes(x = PRIMARY_ANALYTE_2))+
+  geom_bar(na.rm = T)+
+  coord_flip()+
+  labs(title = "At-Risk Assessment: Primary Analyte 2")
+```
+
+```{r}
+data %>%
+  filter(PRIMARY_ANALYTE_3 != is.na(PRIMARY_ANALYTE_3) 
+         & RISK_ASSESSMENT_RESULT == "At-Risk") %>%
+  ggplot(mapping=aes(x = PRIMARY_ANALYTE_3))+
+  geom_bar(na.rm = T)+
+  coord_flip()+
+  labs(title = "At-Risk Assessment: Primary Analyte 3")
+```
+
+It's pretty obvious the type of analyte matters far more than the number present.
+
+## Current Failing: Number of Analytes
+
+```{r}
+#total primary analytes
+data %>%
+  filter(CURRENT_FAILING != is.na(CURRENT_FAILING)) %>%
+  ggplot(mapping=aes(x = TOTAL_PRIMARY_ANALYTES, y = CURRENT_FAILING))+
+  geom_boxplot(na.rm = T)+
+  labs(title = "Current Failing vs Total Primary Analytes")
+```
+
+```{r}
+#total secondary analytes
+data %>%
+  filter(CURRENT_FAILING != is.na(CURRENT_FAILING)) %>%
+  ggplot(mapping=aes(x = TOTAL_SECONDARY_ANALYTES, y = CURRENT_FAILING))+
+  geom_boxplot(na.rm = T)+
+  labs(title = "Current Failing vs Total Secondary Analytes")
+```
+
+```{r}
+#total e coli analytes
+data %>%
+  filter(CURRENT_FAILING != is.na(CURRENT_FAILING)) %>%
+  ggplot(mapping=aes(x = TOTAL_E_COLI_ANALYTES, y = CURRENT_FAILING))+
+  geom_boxplot(na.rm = T)+
+  labs(title = "Current Failing vs Total E. Coli Analytes")
+```
+
+Current Failing looks to cause analytes (as expected).

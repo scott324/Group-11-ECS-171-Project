@@ -1,0 +1,342 @@
+---
+title: "Clean Data"
+author: "Arlette Hall"
+date: "2026-05-21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Libraries & Data
+
+```{r, message = FALSE}
+#load library
+library(janitor)
+library(naniar)
+library(tidyverse)
+```
+
+```{r}
+#load data
+orig_data <- read.csv("SAFER_RA.csv")
+```
+
+## Handling NAs
+
+```{r}
+#NA check
+anyNA(orig_data)
+```
+
+```{r}
+#remove common hidden NAs
+cleaned_data <- orig_data %>%
+  replace_with_na_all(condition = ~.x %in% c(common_na_strings))
+#recheck work
+anyNA(cleaned_data)
+```
+
+```{r}
+#correct remaining NAs
+cleaned_data <- cleaned_data %>%
+  replace_with_na_all(condition = ~.x %in% c("Not Assessed", "Systems not assessed by DWR",
+                                             "UNKNOWN", "MISSING", "Missing"))
+```
+
+## Identifier Column
+
+```{r}
+#check for identifier col
+cleaned_data %>%
+  summarize(n_distinct_TINWSYS = n_distinct(TINWSYS_IS_NUMBER, na.rm=T),
+            n_rows = nrow(cleaned_data))
+#TINWSYS_IS_NUMBER is identifier col
+```
+
+## Simplify Certain Column Entries
+
+Clean up certain column entries.
+
+```{r}
+#check HISTORY_OF_E_COLI_PRESENCE_THRESHOLD_MET
+cleaned_data %>%
+  select(HISTORY_OF_E_COLI_PRESENCE_THRESHOLD_MET) %>%
+  distinct()
+#replace with YES or NO
+cleaned_data <- cleaned_data %>%
+  mutate(HISTORY_OF_E_COLI_PRESENCE_THRESHOLD_MET = case_when(
+    HISTORY_OF_E_COLI_PRESENCE_THRESHOLD_MET == "Yes history of E. coli presence over the last 3 years" ~ "YES",
+    HISTORY_OF_E_COLI_PRESENCE_THRESHOLD_MET == "No history of E. coli presence over the last 3 years" ~ "NO"
+  ))
+#check work
+cleaned_data %>%
+  select(HISTORY_OF_E_COLI_PRESENCE_THRESHOLD_MET) %>%
+  distinct()
+```
+
+```{r}
+#check TREATMENT_TECHNIUQE_VIOLATIONS_THRESHOLD_MET
+cleaned_data %>%
+  select(TREATMENT_TECHNIUQE_VIOLATIONS_THRESHOLD_MET) %>%
+  distinct()
+#replace with YES or NO
+cleaned_data <- cleaned_data %>%
+  mutate(TREATMENT_TECHNIUQE_VIOLATIONS_THRESHOLD_MET = case_when(
+    TREATMENT_TECHNIUQE_VIOLATIONS_THRESHOLD_MET == "1 or more violations over the last three years" ~ "YES",
+    TREATMENT_TECHNIUQE_VIOLATIONS_THRESHOLD_MET == "No violation over the last three years" ~ "NO"
+  ))
+#check work
+cleaned_data %>%
+  select(TREATMENT_TECHNIUQE_VIOLATIONS_THRESHOLD_MET) %>%
+  distinct()
+```
+
+```{r}
+#check PERCENTAGE_OF_SOURCES_EXCEEDING_AN_MCL_THRESHOLD_MET
+cleaned_data %>%
+  select(PERCENTAGE_OF_SOURCES_EXCEEDING_AN_MCL_THRESHOLD_MET) %>%
+  distinct()
+#replace
+cleaned_data <- cleaned_data %>%
+  mutate(PERCENTAGE_OF_SOURCES_EXCEEDING_AN_MCL_THRESHOLD_MET = case_when(
+    PERCENTAGE_OF_SOURCES_EXCEEDING_AN_MCL_THRESHOLD_MET == "Less than 50% sources exceed an MCL" ~ "0-49",
+    PERCENTAGE_OF_SOURCES_EXCEEDING_AN_MCL_THRESHOLD_MET == "50% or more sources exceed an MCL" ~ "50-100"
+  ))
+#check
+cleaned_data %>%
+  select(PERCENTAGE_OF_SOURCES_EXCEEDING_AN_MCL_THRESHOLD_MET) %>%
+  distinct()
+```
+
+```{r}
+#check PAST_PRESENCE_ON_THE_FAILING_LIST_THRESHOLD_MET
+cleaned_data %>%
+  select(PAST_PRESENCE_ON_THE_FAILING_LIST_THRESHOLD_MET) %>%
+  distinct()
+#replace
+cleaned_data <- cleaned_data %>%
+  mutate(PAST_PRESENCE_ON_THE_FAILING_LIST_THRESHOLD_MET = case_when(
+    PAST_PRESENCE_ON_THE_FAILING_LIST_THRESHOLD_MET == "No Failing list occurrence over the last 3 years" ~ "0",
+    PAST_PRESENCE_ON_THE_FAILING_LIST_THRESHOLD_MET == "1 Failing list occurrence over the last 3 years" ~ "1",
+    PAST_PRESENCE_ON_THE_FAILING_LIST_THRESHOLD_MET == "2 or more Failing list occurrences over the last 3 years" ~ "2+"
+  ))
+#check work
+cleaned_data %>%
+  select(PAST_PRESENCE_ON_THE_FAILING_LIST_THRESHOLD_MET) %>%
+  distinct()
+```
+
+```{r}
+#check SOURCE_CAPACITY_VIOLATIONS_THRESHOLD_MET
+cleaned_data %>%
+  select(SOURCE_CAPACITY_VIOLATIONS_THRESHOLD_MET) %>%
+  distinct()
+#replace
+cleaned_data <- cleaned_data %>%
+  mutate(SOURCE_CAPACITY_VIOLATIONS_THRESHOLD_MET = case_when(
+    SOURCE_CAPACITY_VIOLATIONS_THRESHOLD_MET == "No source capacity violations; and no Service Connection Moratoriums within the past 3 years" ~ "0",
+    SOURCE_CAPACITY_VIOLATIONS_THRESHOLD_MET == "1 or more source capacity violation(s); or 1 or more service connection moratorium(s) within the past 3 years" ~ "1+"
+  ))
+#check work
+cleaned_data %>%
+  select(SOURCE_CAPACITY_VIOLATIONS_THRESHOLD_MET) %>%
+  distinct()
+```
+
+```{r}
+#check NUMBER_OF_WATER_SOURCES_THRESHOLD_MET
+cleaned_data %>%
+  select(NUMBER_OF_WATER_SOURCES_THRESHOLD_MET) %>%
+  distinct()
+#replace
+cleaned_data <- cleaned_data %>%
+  mutate(NUMBER_OF_WATER_SOURCES_THRESHOLD_MET = case_when(
+    NUMBER_OF_WATER_SOURCES_THRESHOLD_MET == "0 source (automatically At-Risk)" ~ "0",
+    NUMBER_OF_WATER_SOURCES_THRESHOLD_MET == "1 source" ~ "1",
+    NUMBER_OF_WATER_SOURCES_THRESHOLD_MET == "2 or more sources" ~ "2+"
+  ))
+#check work
+cleaned_data %>%
+  select(NUMBER_OF_WATER_SOURCES_THRESHOLD_MET) %>%
+  distinct()
+```
+
+```{r}
+#check BOTTLED_WATER_OR_HAULED_WATER_RELIANCE_THRESHOLD_MET
+cleaned_data %>%
+  select(BOTTLED_WATER_OR_HAULED_WATER_RELIANCE_THRESHOLD_MET) %>%
+  distinct()
+#replace
+cleaned_data <- cleaned_data %>%
+  mutate(BOTTLED_WATER_OR_HAULED_WATER_RELIANCE_THRESHOLD_MET = case_when(
+    BOTTLED_WATER_OR_HAULED_WATER_RELIANCE_THRESHOLD_MET == "No occurrences of bottled/hauled water reliance within the last 3 years" ~ "0",
+    BOTTLED_WATER_OR_HAULED_WATER_RELIANCE_THRESHOLD_MET == "1 or more occurrence(s) of bottled/hauled water reliance within the last 3 years" ~ "1+"
+  ))
+#check work
+cleaned_data %>%
+  select(BOTTLED_WATER_OR_HAULED_WATER_RELIANCE_THRESHOLD_MET) %>%
+  distinct()
+```
+
+```{r}
+#check CRITICALLY_OVERDRAFTED_GROUNDWATER_BASIN_THRESHOLD_MET
+cleaned_data %>%
+  select(CRITICALLY_OVERDRAFTED_GROUNDWATER_BASIN_THRESHOLD_MET) %>%
+  distinct()
+#replace
+cleaned_data <- cleaned_data %>%
+  mutate(CRITICALLY_OVERDRAFTED_GROUNDWATER_BASIN_THRESHOLD_MET = case_when(
+    CRITICALLY_OVERDRAFTED_GROUNDWATER_BASIN_THRESHOLD_MET == "No sources within a Critically Overdrafted Basin" ~ "0",
+    CRITICALLY_OVERDRAFTED_GROUNDWATER_BASIN_THRESHOLD_MET == "1 or more source(s) within a Critically Overdrafted Basin" ~ "1+"
+  ))
+#check work
+cleaned_data %>%
+  select(CRITICALLY_OVERDRAFTED_GROUNDWATER_BASIN_THRESHOLD_MET) %>%
+  distinct()
+```
+
+```{r}
+#check SIGNIFICANT_DEFICIENCIES_THRESHOLD_MET
+cleaned_data %>%
+  select(SIGNIFICANT_DEFICIENCIES_THRESHOLD_MET) %>%
+  distinct()
+#replace
+cleaned_data <- cleaned_data %>%
+  mutate(SIGNIFICANT_DEFICIENCIES_THRESHOLD_MET = case_when(
+    SIGNIFICANT_DEFICIENCIES_THRESHOLD_MET == "No Significant Deficiencies over the last three years" ~ "0",
+    SIGNIFICANT_DEFICIENCIES_THRESHOLD_MET == "1 or more Significant Deficiencies over the last three years" ~ "1+"
+  ))
+#check work
+cleaned_data %>%
+  select(SIGNIFICANT_DEFICIENCIES_THRESHOLD_MET) %>%
+  distinct()
+```
+
+## Add Total Analytes Columns
+
+```{r}
+#number of distinct entries with analytes
+cleaned_data %>%
+  summarize(Primary = n_distinct(PRIMARY_ANALYTES, na.rm=T),
+            Secondary = n_distinct(SECONDARY_ANALYTES, na.rm=T),
+            E.coli = n_distinct(E_COLI_ANALYTES, na.rm=T),
+            Treatment.Technique = n_distinct(TT_ANALYTES, na.rm=T),
+            Monitoring.and.Reporting = n_distinct(MONITORING_AND_REPORTING_ANALYTES, na.rm=T))
+```
+
+```{r}
+#number of entries with analytes
+cleaned_data %>%
+  summarize(n_Primary = sum(!is.na(PRIMARY_ANALYTES)),
+            n_Secondary = sum(!is.na(SECONDARY_ANALYTES)),
+            n_E_coli = sum(!is.na(E_COLI_ANALYTES)),
+            n_Treatment_Technique = sum(!is.na(TT_ANALYTES)),
+            n_Monitoring_Reporting = sum(!is.na(MONITORING_AND_REPORTING_ANALYTES)))
+```
+
+```{r}
+#create TOTAL_PRIMARY_ANALYTES col
+cleaned_data <- cleaned_data %>%
+  add_column(TOTAL_PRIMARY_ANALYTES = NA)
+#analytes separated by ";", count ";" to enter TOTAL_PRIMARY_ANALYTES
+cleaned_data <- cleaned_data %>%
+  mutate(TOTAL_PRIMARY_ANALYTES = case_when(
+    PRIMARY_ANALYTES == is.na(PRIMARY_ANALYTES) ~ 0,
+    PRIMARY_ANALYTES != is.na(PRIMARY_ANALYTES) & str_count(PRIMARY_ANALYTES, ";") == 0 ~ 1,
+    str_count(PRIMARY_ANALYTES, ";") == 1 ~ 2,
+    str_count(PRIMARY_ANALYTES, ";") == 2 ~ 3,
+    str_count(PRIMARY_ANALYTES, ";") == 3 ~ 4,
+    str_count(PRIMARY_ANALYTES, ";") == 4 ~ 5
+  ))
+```
+
+```{r}
+#create TOTAL_SECONDARY_ANALYTES col
+cleaned_data <- cleaned_data %>%
+  add_column(TOTAL_SECONDARY_ANALYTES = NA)
+#analytes separated by ";", count ";" to enter TOTAL_PRIMARY_ANALYTES
+cleaned_data <- cleaned_data %>%
+  mutate(TOTAL_SECONDARY_ANALYTES = case_when(
+    SECONDARY_ANALYTES == is.na(SECONDARY_ANALYTES) ~ 0,
+    SECONDARY_ANALYTES != is.na(SECONDARY_ANALYTES) 
+      & str_count(SECONDARY_ANALYTES, ";") == 0 ~ 1,
+    str_count(SECONDARY_ANALYTES, ";") == 1 ~ 2,
+    str_count(SECONDARY_ANALYTES, ";") == 2 ~ 3,
+    str_count(SECONDARY_ANALYTES, ";") == 3 ~ 4
+  ))
+```
+
+```{r}
+#create TOTAL_E_COLI_ANALYTES col
+cleaned_data <- cleaned_data %>%
+  add_column(TOTAL_E_COLI_ANALYTES = NA)
+#analytes separated by ";", count ";" to enter TOTAL_PRIMARY_ANALYTES
+cleaned_data <- cleaned_data %>%
+  mutate(TOTAL_E_COLI_ANALYTES = case_when(
+    E_COLI_ANALYTES == is.na(E_COLI_ANALYTES) ~ 0,
+    E_COLI_ANALYTES != is.na(E_COLI_ANALYTES) 
+      & str_count(E_COLI_ANALYTES, ";") == 0 ~ 1
+  ))
+```
+
+## Split Some Columns
+
+```{r}
+#split PRIMARY_ANALYTES
+cleaned_data <- cleaned_data %>%
+  separate_wider_delim(PRIMARY_ANALYTES,
+                       delim = ";",
+                       names = c("PRIMARY_ANALYTE_1",
+                                 "PRIMARY_ANALYTE_2",
+                                 "PRIMARY_ANALYTE_3",
+                                 "PRIMARY_ANALYTE_4",
+                                 "PRIMARY_ANALYTE_5"),
+                       too_few = "align_start")
+```
+
+```{r}
+#split SECONDARY_ANALYTES
+cleaned_data <- cleaned_data %>%
+  separate_wider_delim(SECONDARY_ANALYTES,
+                       delim = ";",
+                       names = c("SECONDARY_ANALYTE_1",
+                                 "SECONDARY_ANALYTE_2",
+                                 "SECONDARY_ANALYTE_3",
+                                 "SECONDARY_ANALYTE_4"),
+                       too_few = "align_start")
+```
+
+```{r}
+#split PERCENTAGE_OF_SOURCES_EXCEEDING_AN_MCL_THRESHOLD_MET col into min and max
+cleaned_data <- cleaned_data %>%
+  separate_wider_delim(PERCENTAGE_OF_SOURCES_EXCEEDING_AN_MCL_THRESHOLD_MET,
+                       delim = "-",
+                       names = c("MIN_PCT_OF_SOURCES_EXCEED_MCL_THRESHOLD_MET",
+                                 "MAX_PCT_OF_SOURCES_EXCEED_MCL_THRESHOLD_MET"))
+```
+
+```{r}
+#check CREATED_DATE
+cleaned_data %>%
+  select(CREATED_DATE) %>%
+  distinct()
+#all same value, not splitting
+```
+
+```{r}
+#check FAILING_START_DATE
+cleaned_data %>%
+  select(FAILING_START_DATE) %>%
+  distinct()
+#will split if we want to use it
+```
+
+
+## Write to CSV
+
+```{r}
+write_csv(cleaned_data, "SAFER_RA_cleaned.csv")
+```
+
